@@ -10,7 +10,7 @@ url = "https://bing.com/chat"
 driver.get(url)
 
 # Ler o conteúdo do arquivo input.txt
-with open('input.txt', 'r', encoding='utf-8') as arquivo:
+with open('input.txt', 'r', encoding='latin-1') as arquivo:
     texto_inserido = arquivo.read().strip()
 
 # Aguarde alguns segundos (opcional)
@@ -101,25 +101,36 @@ document
 """
 )
 
-time.sleep(60)
+time.sleep(70)
 
 # Obter a resposta usando JavaScript
 resposta_element = driver.execute_script(
     """
-    const shadowRoot1 = document.querySelector("#b_sydConvCont > cib-serp").shadowRoot;
-    const shadowRoot2 = shadowRoot1.querySelector("#cib-conversation-main").shadowRoot;
-    const shadowRoot3 = shadowRoot2.querySelector("#cib-chat-main > cib-chat-turn:nth-child(4)").shadowRoot;
-    const responseMessageGroup = shadowRoot3.querySelector("cib-message-group.response-message-group").shadowRoot;
-    const responseMessage = responseMessageGroup.querySelector("cib-message:nth-child(3)").shadowRoot;
-    const respostaElement = responseMessage.querySelector("cib-shared > div");
+const chatContainer = document.querySelector("#b_sydConvCont > cib-serp").shadowRoot
+    .querySelector("#cib-conversation-main").shadowRoot
+    .querySelector("#cib-chat-main");
 
-    return respostaElement.innerText; // ou respostaElement.textContent;
+let minhaMensagem = "";
+let respostaRobo = "";
+
+const mensagens = chatContainer.shadowRoot.querySelectorAll("cib-message-group");
+for (const mensagem of mensagens) {
+    const texto = mensagem.shadowRoot.querySelector("cib-message").shadowRoot.querySelector("cib-shared > div").innerText;
+    if (texto.includes("Sua Mensagem")) {
+        minhaMensagem = texto;
+    } else if (texto.includes("Resposta do Robô")) {
+        respostaRobo = texto;
+    }
+}
+
+const respostaFinal = respostaRobo.substring(minhaMensagem.length).trim();
+return respostaFinal;
+
     """
 )
 
+# Codificar a resposta para utf-8 antes de imprimir
+resposta_encoded = resposta_element.encode('utf-8')
+
 # Imprimir a resposta da requisição
-print("Resposta da requisição: " + resposta_element)
-
-
-# Fechar o navegador quando terminar
-driver.quit()
+print(resposta_encoded.decode('utf-8'))
